@@ -1,4 +1,4 @@
-# Welcome to your blibk-gig-galaxy
+# Welcome to your blink-gig-galaxy
 
 ## Project info
 
