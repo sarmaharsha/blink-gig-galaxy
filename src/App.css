@@ -1,3 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --solana-purple: #9945FF;
+  --solana-green: #14F195;
+}
+
+body {
+  background-color: #000;
+  color: #fff;
+}
+
+.solana-gradient-text {
+  background: linear-gradient(90deg, var(--solana-purple), var(--solana-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.solana-gradient {
+  background: linear-gradient(90deg, var(--solana-purple), var(--solana-green));
+}
+
+.solana-card {
+  @apply bg-black/40 border border-white/10 rounded-lg backdrop-blur-md;
+}
+
+.solana-button {
+  @apply px-4 py-2 rounded-lg bg-[#9945FF] text-white font-medium hover:bg-[#9945FF]/90 transition-colors;
+}
+
+.solana-button-outline {
+  @apply px-4 py-2 rounded-lg border border-[#9945FF] text-[#9945FF] font-medium hover:bg-[#9945FF]/10 transition-colors;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--solana-purple);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--solana-green);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -39,4 +119,54 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Solana gradient animation */
+@keyframes solana-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.solana-gradient-animate {
+  background: linear-gradient(
+    45deg,
+    #9945FF,
+    #14F195,
+    #9945FF
+  );
+  background-size: 200% 200%;
+  animation: solana-gradient 5s ease infinite;
+}
+
+/* Hover effects */
+.hover-glow {
+  transition: all 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(153, 69, 255, 0.3);
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.loading-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

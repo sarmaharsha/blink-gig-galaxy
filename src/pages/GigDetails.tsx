@@ -1,169 +1,161 @@
-
-import { useState } from 'react';
+import * as React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Layout from '@/components/Layout';
-import { mockGigs } from '@/data/mockData';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/components/ui/use-toast';
-import BlinkPayment from '@/components/BlinkPayment';
-import { Send, ArrowLeft } from 'lucide-react';
+import { preFilledGigs } from '../data/preFilledGigs';
+import { useWallet } from '@solana/wallet-adapter-react';
+import toast from 'react-hot-toast';
 
-const GigDetails = () => {
-  const { id } = useParams<{ id: string }>();
+const GigDetails: React.FC = () => {
+  const { gigId } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-  
-  // Find the gig with the matching id
-  const gig = mockGigs.find(g => g.id === id);
-  
+  const { connected } = useWallet();
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  // Find the gig from all categories
+  const gig = React.useMemo(() => {
+    for (const category of Object.values(preFilledGigs)) {
+      const foundGig = category.find(g => g.id === gigId);
+      if (foundGig) return foundGig;
+    }
+    return null;
+  }, [gigId]);
+
+  React.useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    setIsLoggedIn(!!storedUser);
+  }, []);
+
   if (!gig) {
     return (
-      <Layout>
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="mb-4 text-lg font-medium">Gig not found</p>
-          <Button variant="outline" onClick={() => navigate('/')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Button>
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Gig not found</h1>
+          <button
+            onClick={() => navigate('/')}
+            className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Go Back Home
+          </button>
         </div>
-      </Layout>
+      </div>
     );
   }
-  
+
   const handleApply = () => {
-    setIsPaymentOpen(true);
+    if (!isLoggedIn) {
+      toast.error('Please login to apply for this gig');
+      navigate('/login');
+      return;
+    }
+
+    if (!connected) {
+      toast.error('Please connect your wallet to apply');
+      return;
+    }
+
+    // Get current user
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    // Get existing applications
+    const appliedGigs = JSON.parse(localStorage.getItem(`appliedGigs_${user.id}`) || '[]');
+    
+    // Check if already applied
+    if (appliedGigs.some((g: any) => g.id === gig.id)) {
+      toast.error('You have already applied for this gig');
+      return;
+    }
+
+    // Add to applied gigs
+    appliedGigs.push(gig);
+    localStorage.setItem(`appliedGigs_${user.id}`, JSON.stringify(appliedGigs));
+    
+    toast.success('Successfully applied for the gig!');
+    navigate('/dashboard?tab=applied');
   };
 
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto space-y-6 pb-16">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-2">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-        
-        {/* Gig header */}
-        <div>
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <h1 className="text-2xl font-bold">{gig.title}</h1>
-            <Badge className="text-lg px-4 py-2 bg-solana-purple hover:bg-solana-purple/90">
-              {gig.price} SOL
-            </Badge>
+    <div className="min-h-screen bg-gray-900 text-white py-20 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-4">{gig.title}</h1>
+          <div className="flex items-center gap-4 text-gray-400">
+            <div className="flex items-center gap-2">
+              <span>⏱️</span>
+              <span>{gig.duration}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span>💰</span>
+              <span>{gig.price} SOL</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span>👥</span>
+              <span>{gig.applications} applications</span>
+            </div>
           </div>
-          
-          <div className="flex flex-wrap gap-2 mb-6">
-            <Badge variant="outline" className="capitalize">{gig.category}</Badge>
-            <Badge variant="outline">Est. {gig.timeEstimate}</Badge>
+        </div>
+
+        {/* Provider Info */}
+        <div className="bg-gray-800/50 rounded-xl p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">About the Provider</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-lg font-medium">{gig.provider.name}</p>
+              <div className="flex items-center gap-2 text-gray-400">
+                <span>⭐</span>
+                <span>{gig.provider.rating} rating</span>
+              </div>
+            </div>
+            <button
+              onClick={handleApply}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-semibold transition-all duration-300"
+            >
+              Apply Now
+            </button>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="bg-gray-800/50 rounded-xl p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Description</h2>
+          <p className="text-gray-300 leading-relaxed">{gig.description}</p>
+        </div>
+
+        {/* Skills */}
+        <div className="bg-gray-800/50 rounded-xl p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Required Skills</h2>
+          <div className="flex flex-wrap gap-2">
             {gig.skills.map((skill, index) => (
-              <Badge key={index} variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+              <span
+                key={index}
+                className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm"
+              >
                 {skill}
-              </Badge>
+              </span>
             ))}
           </div>
         </div>
-        
-        {/* Gig image and description */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="md:col-span-2 space-y-6">
-            {gig.image && (
-              <div className="overflow-hidden rounded-lg">
-                <img 
-                  src={gig.image} 
-                  alt={gig.title} 
-                  className="w-full object-cover h-64 md:h-80"
-                />
-              </div>
-            )}
-            
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Description</h2>
-                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
-                  {gig.description}
-                </p>
-                
-                <Separator className="my-6" />
-                
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold">Requirements</h2>
-                  <ul className="list-disc pl-5 space-y-2">
-                    <li>Deliver work within {gig.timeEstimate}</li>
-                    <li>Experience with {gig.skills.join(', ')}</li>
-                    <li>Clear communication and updates</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Sidebar with poster info and action buttons */}
-          <div className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-lg font-semibold mb-4">About the Poster</h2>
-                <div className="flex items-center space-x-3 mb-4">
-                  <img 
-                    src={gig.poster.avatar} 
-                    alt={gig.poster.username} 
-                    className="w-12 h-12 rounded-full"
-                  />
-                  <div>
-                    <p className="font-medium">{gig.poster.username}</p>
-                    <div className="flex items-center text-sm">
-                      <span className="text-yellow-500">★</span>
-                      <span className="ml-1">{gig.poster.rating}</span>
-                      <span className="ml-1 text-gray-500">
-                        ({gig.poster.completedGigs} gigs)
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <p>Member since {gig.poster.dateJoined}</p>
-                  <p>Wallet: {gig.poster.wallet}</p>
-                </div>
-                
-                <Separator className="my-4" />
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span>Posted on:</span>
-                    <span>{gig.datePosted}</span>
-                  </div>
-                  <Button className="w-full bg-solana-purple hover:bg-solana-purple/90" onClick={handleApply}>
-                    <Send className="w-4 h-4 mr-2" />
-                    Apply for this Gig
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+
+        {/* Requirements */}
+        <div className="bg-gray-800/50 rounded-xl p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Requirements</h2>
+          <ul className="list-disc list-inside text-gray-300 space-y-2">
+            {gig.requirements.map((req, index) => (
+              <li key={index}>{req}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Deliverables */}
+        <div className="bg-gray-800/50 rounded-xl p-6">
+          <h2 className="text-xl font-semibold mb-4">Deliverables</h2>
+          <ul className="list-disc list-inside text-gray-300 space-y-2">
+            {gig.deliverables.map((del, index) => (
+              <li key={index}>{del}</li>
+            ))}
+          </ul>
         </div>
       </div>
-      
-      {/* Payment dialog */}
-      <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Apply for Gig</DialogTitle>
-            <DialogDescription>
-              Send a payment request to the gig poster using Solana Blinks
-            </DialogDescription>
-          </DialogHeader>
-          <BlinkPayment 
-            receiverWallet={gig.poster.wallet} 
-            amount={gig.price}
-            onComplete={() => setIsPaymentOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-    </Layout>
+    </div>
   );
 };
 

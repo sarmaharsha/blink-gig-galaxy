@@ -15,16 +15,22 @@
     "jsx": "react-jsx",
 
     /* Linting */
-    "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noImplicitAny": false,
-    "noFallthroughCasesInSwitch": false,
+    "strict": true, // Changed to true for better type safety
+    "noUnusedLocals": true, // Enable to catch unused variables
+    "noUnusedParameters": true, // Enable to catch unused parameters
+    "noImplicitAny": true, // Enable to enforce explicit types
+    "noFallthroughCasesInSwitch": true, // Enable to prevent switch case fallthrough
+
+    /* Type Definitions */
+    "typeRoots": ["./node_modules/@types", "./src/types"], // Added ./src/types explicitly
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
 
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "src/types"],
+  "exclude": ["node_modules", "dist"] // Added to prevent scanning node_modules
 }

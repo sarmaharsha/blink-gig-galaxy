@@ -1,36 +1,56 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { clusterApiUrl } from '@solana/web3.js';
+import { useMemo } from 'react';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+import TrendingCollections from './components/TrendingCollections';
+import WelcomeSection from './components/WelcomeSection';
+import GigCategories from './components/GigCategories';
+import TopBar from './components/TopBar';
+import GigDetails from './pages/GigDetails';
+import CreateGig from './pages/CreateGig';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
+import Fund from './pages/Fund';
+import { Toaster } from 'react-hot-toast';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import CreateGig from "./pages/CreateGig";
-import Profile from "./pages/Profile";
-import GigDetails from "./pages/GigDetails";
-import Search from "./pages/Search";
+function App() {
+  const endpoint = useMemo(() => clusterApiUrl('devnet'), []);
+  const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/create-gig" element={<CreateGig />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/gig/:id" element={<GigDetails />} />
-          <Route path="/search" element={<Search />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+  return (
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>
+          <Router>
+            <div className="min-h-screen bg-gray-900">
+              <TopBar />
+              <main className="space-y-0">
+                <Routes>
+                  <Route path="/" element={
+                    <>
+                      <WelcomeSection />
+                      <TrendingCollections />
+                      <GigCategories />
+                    </>
+                  } />
+                  <Route path="/gig/:gigId" element={<GigDetails />} />
+                  <Route path="/create-gig" element={<CreateGig />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/fund" element={<Fund />} />
+                </Routes>
+              </main>
+              <Toaster position="bottom-right" />
+            </div>
+          </Router>
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
+  );
+}
 
 export default App;
